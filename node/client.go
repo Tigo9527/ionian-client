@@ -54,6 +54,10 @@ func (c *Client) URL() string {
 	return c.url
 }
 
+func (c *Client) KV() *KvClient {
+	return newKvClient(c.MiddlewarableProvider)
+}
+
 // Ionian RPCs
 
 func (c *Client) GetStatus() (status Status, err error) {

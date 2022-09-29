@@ -30,3 +30,9 @@ type SegmentWithProof struct {
 	Proof    merkle.Proof `json:"proof"`    // segment merkle proof
 	FileSize uint64       `json:"fileSize"` // file size
 }
+
+type Value struct {
+	Version uint64 `json:"version"` // key version
+	Data    []byte `json:"data"`    // value data
+	Size    uint64 `json:"size"`    // value total size
+}
