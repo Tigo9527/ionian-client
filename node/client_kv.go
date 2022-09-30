@@ -20,6 +20,6 @@ func (c *KvClient) GetValue(streamId, key common.Hash, startIndex, length uint64
 	if len(version) > 0 {
 		args = append(args, version[0])
 	}
-	err = c.provider.CallContext(context.Background(), &val, "kv_getKey", args...)
+	err = c.provider.CallContext(context.Background(), &val, "kv_getValue", args...)
 	return
 }
