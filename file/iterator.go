@@ -17,7 +17,7 @@ type Iterator struct {
 }
 
 func NewSegmentIterator(file *os.File, fileSize int64, offset int64, flowPadding bool) *Iterator {
-	return NewIterator(file, fileSize, offset, DefaultChunkSize*DefaultSegmentMaxChunks, flowPadding)
+	return NewIterator(file, fileSize, offset, DefaultSegmentSize, flowPadding)
 }
 
 func NewIterator(file *os.File, fileSize int64, offset int64, batch int64, flowPadding bool) *Iterator {

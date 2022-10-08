@@ -15,11 +15,17 @@ const (
 	// DefaultSegmentMaxChunks represents the default maximum number of chunks within a segment.
 	DefaultSegmentMaxChunks = 1024
 
+	// DefaultSegmentSize represents the default segment size in bytes.
 	DefaultSegmentSize = DefaultChunkSize * DefaultSegmentMaxChunks
 )
 
-// ErrFileRequired is returned when manipulate on a folder.
-var ErrFileRequired = errors.New("file required")
+var (
+	// ErrFileRequired is returned when manipulate on a folder.
+	ErrFileRequired = errors.New("file required")
+
+	// ErrFileEmpty is returned when empty file opened.
+	ErrFileEmpty = errors.New("file is empty")
+)
 
 type File struct {
 	os.FileInfo
@@ -32,9 +38,13 @@ func Exists(name string) (bool, error) {
 		return false, nil
 	}
 
+	if err != nil {
+		return false, err
+	}
+
 	defer file.Close()
 
-	return true, err
+	return true, nil
 }
 
 func Open(name string) (*File, error) {
@@ -52,6 +62,10 @@ func Open(name string) (*File, error) {
 		return nil, ErrFileRequired
 	}
 
+	if info.Size() == 0 {
+		return nil, ErrFileEmpty
+	}
+
 	return &File{
 		FileInfo:   info,
 		underlying: file,
@@ -67,7 +81,7 @@ func (file *File) NumChunks() uint32 {
 }
 
 func (file *File) NumSegments() uint32 {
-	return numSplits(file.Size(), DefaultChunkSize*DefaultSegmentMaxChunks)
+	return numSplits(file.Size(), DefaultSegmentSize)
 }
 
 func (file *File) Iterate(flowPadding bool) *Iterator {
@@ -98,11 +112,7 @@ func (file *File) MerkleTree() (*merkle.Tree, error) {
 }
 
 func numSplits(total int64, unit int) uint32 {
-	if total%int64(unit) == 0 {
-		return uint32(total / int64(unit))
-	}
-
-	return uint32(total/int64(unit)) + 1
+	return uint32((total-1)/int64(unit) + 1)
 }
 
 func segmentRoot(chunks []byte) common.Hash {

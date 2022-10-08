@@ -41,10 +41,6 @@ func (uploader *Uploader) Upload(filename string, tags string) error {
 	}
 	defer file.Close()
 
-	if file.Size() == 0 {
-		return errors.New("File is empty")
-	}
-
 	logrus.WithFields(logrus.Fields{
 		"name":     file.Name(),
 		"size":     file.Size(),
