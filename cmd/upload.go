@@ -6,6 +6,7 @@ import (
 	"github.com/Ionian-Web3-Storage/ionian-client/file"
 	"github.com/Ionian-Web3-Storage/ionian-client/node"
 	ethCommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -57,8 +58,8 @@ func upload(*cobra.Command, []string) {
 	defer node.Close()
 
 	uploader := file.NewUploader(ionian, node)
-	
-	if err := uploader.Upload(uploadArgs.file, uploadArgs.tags); err != nil {
+	tags := hexutil.MustDecode(uploadArgs.tags)
+	if err := uploader.Upload(uploadArgs.file, tags); err != nil {
 		logrus.WithError(err).Fatal("Failed to upload file")
 	}
 }

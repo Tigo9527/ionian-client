@@ -1,8 +1,6 @@
 package gateway
 
 import (
-	"strings"
-
 	"path/filepath"
 
 	"github.com/Ionian-Web3-Storage/ionian-client/file"
@@ -103,7 +101,6 @@ func getFileStatus(c *gin.Context) (interface{}, error) {
 func uploadLocalFile(c *gin.Context) (interface{}, error) {
 	var input struct {
 		Path string `form:"path" json:"path" binding:"required"`
-		Tags string `form:"tags" json:"tags"`
 		Node int    `form:"node" json:"node"`
 	}
 
@@ -115,17 +112,11 @@ func uploadLocalFile(c *gin.Context) (interface{}, error) {
 		return nil, ErrValidation.WithData("node index out of bound")
 	}
 
-	if input.Tags == "" {
-		input.Tags = "0x"
-	} else if len(input.Tags)%2 != 0 || !strings.HasPrefix(input.Tags, "0x") {
-		return nil, ErrValidation.WithData("invalid tags")
-	}
-
 	uploader := file.NewUploaderLight(allClients[input.Node])
 
 	filename := getFilePath(input.Path, false)
 
-	if err := uploader.Upload(filename, input.Tags); err != nil {
+	if err := uploader.Upload(filename, nil); err != nil {
 		return nil, err
 	}
 

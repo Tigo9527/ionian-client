@@ -6,7 +6,6 @@ import (
 
 	"github.com/Ionian-Web3-Storage/ionian-client/contract"
 	"github.com/Ionian-Web3-Storage/ionian-client/file/merkle"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,12 +14,8 @@ type Flow struct {
 	tags []byte
 }
 
-func NewFlow(file *File, tags string) (*Flow, error) {
-	tagsInBytes, err := hexutil.Decode(tags)
-	if err != nil {
-		return nil, err
-	}
-	return &Flow{file: file, tags: tagsInBytes}, nil
+func NewFlow(file *File, tags []byte) *Flow {
+	return &Flow{file, tags}
 }
 
 func (flow *Flow) CreateSubmission() (*contract.Submission, error) {

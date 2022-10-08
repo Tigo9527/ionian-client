@@ -3,6 +3,7 @@ package common
 import (
 	"time"
 
+	providers "github.com/openweb3/go-rpc-provider/provider_wrapper"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/signers"
 	"github.com/sirupsen/logrus"
@@ -26,4 +27,16 @@ func NewWeb3(url, key string) (*web3go.Client, error) {
 		WithSignerManager(sm)
 
 	return web3go.NewClientWithOption(url, *option)
+}
+
+func NewWeb3WithOption(url, key string, option ...providers.Option) (*web3go.Client, error) {
+	var opt web3go.ClientOption
+
+	if len(option) > 0 {
+		opt.Option = option[0]
+	}
+
+	sm := signers.MustNewSignerManagerByPrivateKeyStrings([]string{key})
+
+	return web3go.NewClientWithOption(url, *opt.WithSignerManager(sm))
 }

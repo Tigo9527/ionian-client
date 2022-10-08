@@ -33,7 +33,7 @@ func NewUploaderLight(client *node.Client) *Uploader {
 	}
 }
 
-func (uploader *Uploader) Upload(filename string, tags string) error {
+func (uploader *Uploader) Upload(filename string, tags []byte) error {
 	// Open file to upload
 	file, err := Open(filename)
 	if err != nil {
@@ -146,11 +146,8 @@ func (uploader *Uploader) waitForSuccessfulExecution(txHash common.Hash) error {
 	}
 }
 
-func (uploader *Uploader) submitLogEntry(file *File, tags string, tree *merkle.Tree) error {
-	flow, err := NewFlow(file, tags)
-	if err != nil {
-		return errors.WithMessage(err, "Failed to create flow")
-	}
+func (uploader *Uploader) submitLogEntry(file *File, tags []byte, tree *merkle.Tree) error {
+	flow := NewFlow(file, tags)
 	submission, err := flow.CreateSubmission()
 	if err != nil {
 		return errors.WithMessage(err, "Failed to create flow submission")
