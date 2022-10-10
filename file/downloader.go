@@ -24,7 +24,7 @@ func NewDownloader(clients ...*node.Client) *Downloader {
 	}
 }
 
-func (downloader *Downloader) Download(root, filename string) error {
+func (downloader *Downloader) Download(root, filename string, proof bool) error {
 	hash := common.HexToHash(root)
 
 	// Query file info from storage node
@@ -39,7 +39,7 @@ func (downloader *Downloader) Download(root, filename string) error {
 	}
 
 	// Download segments
-	if err = downloader.downloadFile(filename, hash, int64(info.Tx.Size)); err != nil {
+	if err = downloader.downloadFile(filename, hash, int64(info.Tx.Size), proof); err != nil {
 		return errors.WithMessage(err, "Failed to download file")
 	}
 
@@ -97,7 +97,7 @@ func (downloader *Downloader) checkExistence(filename string, hash common.Hash) 
 	return errors.New("File already exists with different hash")
 }
 
-func (downloader *Downloader) downloadFile(filename string, root common.Hash, size int64) error {
+func (downloader *Downloader) downloadFile(filename string, root common.Hash, size int64, proof bool) error {
 	file, err := download.CreateDownloadingFile(filename, root, size)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to create downloading file")
@@ -106,7 +106,7 @@ func (downloader *Downloader) downloadFile(filename string, root common.Hash, si
 
 	logrus.WithField("threads", len(downloader.clients)).Info("Begin to download file from storage node")
 
-	sd, err := NewSegmentDownloader(downloader.clients, file)
+	sd, err := NewSegmentDownloader(downloader.clients, file, proof)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to create segment downloader")
 	}

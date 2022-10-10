@@ -108,7 +108,6 @@ func (md *Metadata) Write(file *os.File, data []byte) error {
 	}
 
 	// write data
-	// TODO validate proof to ensure data integrity
 	n, err := file.WriteAt(data, md.Offset)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to write data")

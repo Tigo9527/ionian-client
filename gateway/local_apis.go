@@ -142,7 +142,7 @@ func downloadFileLocal(c *gin.Context) (interface{}, error) {
 
 	filename := getFilePath(input.Path, true)
 
-	if err := downloader.Download(input.Root, filename); err != nil {
+	if err := downloader.Download(input.Root, filename, false); err != nil {
 		return nil, err
 	}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Ionian-Web3-Storage/ionian-client/file/merkle"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -17,6 +18,11 @@ const (
 
 	// DefaultSegmentSize represents the default segment size in bytes.
 	DefaultSegmentSize = DefaultChunkSize * DefaultSegmentMaxChunks
+)
+
+var (
+	EmptyChunk     = make([]byte, DefaultChunkSize)
+	EmptyChunkHash = crypto.Keccak256Hash(EmptyChunk)
 )
 
 var (
@@ -115,18 +121,25 @@ func numSplits(total int64, unit int) uint32 {
 	return uint32((total-1)/int64(unit) + 1)
 }
 
-func segmentRoot(chunks []byte) common.Hash {
-	dataLen := len(chunks)
-	if dataLen == 0 {
-		return common.Hash{}
-	}
-
+func segmentRoot(chunks []byte, emptyChunksPadded ...uint32) common.Hash {
 	var builder merkle.TreeBuilder
 
-	for offset := 0; offset < dataLen; offset += DefaultChunkSize {
+	// append chunks
+	for offset, dataLen := 0, len(chunks); offset < dataLen; offset += DefaultChunkSize {
 		chunk := chunks[offset : offset+DefaultChunkSize]
 		builder.Append(chunk)
 	}
 
-	return builder.Build().Root()
+	// append empty chunks
+	if len(emptyChunksPadded) > 0 && emptyChunksPadded[0] > 0 {
+		for i := uint32(0); i < emptyChunksPadded[0]; i++ {
+			builder.AppendHash(EmptyChunkHash)
+		}
+	}
+
+	if tree := builder.Build(); tree != nil {
+		return tree.Root()
+	}
+
+	return common.Hash{}
 }

@@ -80,6 +80,11 @@ func (c *Client) DownloadSegment(root common.Hash, startIndex, endIndex uint32) 
 	return
 }
 
+func (c *Client) DownloadSegmentWithProof(root common.Hash, index uint32) (segment *SegmentWithProof, err error) {
+	err = c.MiddlewarableProvider.CallContext(context.Background(), &segment, "ionian_downloadSegmentWithProof", root, index)
+	return
+}
+
 // Admin RPCs
 
 func (c *Client) Shutdown() (ret int, err error) {

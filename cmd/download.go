@@ -12,6 +12,7 @@ var (
 		file  string
 		nodes []string
 		root  string
+		proof bool
 	}
 
 	downloadCmd = &cobra.Command{
@@ -24,10 +25,11 @@ var (
 func init() {
 	downloadCmd.Flags().StringVar(&downloadArgs.file, "file", "", "File name to download")
 	downloadCmd.MarkFlagRequired("file")
-	downloadCmd.Flags().StringSliceVar(&downloadArgs.nodes, "node", []string{}, "Ionian storage node URL")
+	downloadCmd.Flags().StringSliceVar(&downloadArgs.nodes, "node", []string{}, "Ionian storage node URL. Multiple nodes could be specified and separated by comma, e.g. url1,url2,url3")
 	downloadCmd.MarkFlagRequired("node")
 	downloadCmd.Flags().StringVar(&downloadArgs.root, "root", "", "Merkle root to download file")
 	downloadCmd.MarkFlagRequired("root")
+	downloadCmd.Flags().BoolVar(&downloadArgs.proof, "proof", false, "Whether to download with merkle proof for validation")
 
 	rootCmd.AddCommand(downloadCmd)
 }
@@ -37,7 +39,7 @@ func download(*cobra.Command, []string) {
 
 	downloader := file.NewDownloader(nodes...)
 
-	if err := downloader.Download(downloadArgs.root, downloadArgs.file); err != nil {
+	if err := downloader.Download(downloadArgs.root, downloadArgs.file, downloadArgs.proof); err != nil {
 		logrus.WithError(err).Fatal("Failed to download file")
 	}
 }
