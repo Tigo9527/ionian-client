@@ -19,8 +19,10 @@ type Transaction struct {
 }
 
 type FileInfo struct {
-	Tx        Transaction `json:"tx"`
-	Finalized bool        `json:"finalized"`
+	Tx             Transaction `json:"tx"`
+	Finalized      bool        `json:"finalized"`
+	IsCached       bool        `json:"isCached"`
+	UploadedSegNum uint32      `json:"uploadedSegNum"`
 }
 
 type SegmentWithProof struct {
