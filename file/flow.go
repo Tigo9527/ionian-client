@@ -38,9 +38,10 @@ func (flow *Flow) CreateSubmission() (*contract.Submission, error) {
 	return &submission, nil
 }
 
-func nextPow2(input uint32) uint64 {
-	x := uint64(input)
+func nextPow2(input uint64) uint64 {
+	x := input
 	x -= 1
+	x |= x >> 32
 	x |= x >> 16
 	x |= x >> 8
 	x |= x >> 4
@@ -50,9 +51,9 @@ func nextPow2(input uint32) uint64 {
 	return x
 }
 
-func computePaddedSize(chunks uint32) (uint64, uint64) {
+func computePaddedSize(chunks uint64) (uint64, uint64) {
 	chunksNextPow2 := nextPow2(chunks)
-	if chunksNextPow2 == uint64(chunks) {
+	if chunksNextPow2 == chunks {
 		return chunksNextPow2, chunksNextPow2
 	}
 
@@ -63,7 +64,7 @@ func computePaddedSize(chunks uint32) (uint64, uint64) {
 		minChunk = 1
 	}
 
-	paddedChunks := ((uint64(chunks)-1)/minChunk + 1) * minChunk
+	paddedChunks := ((chunks-1)/minChunk + 1) * minChunk
 	return paddedChunks, chunksNextPow2
 }
 

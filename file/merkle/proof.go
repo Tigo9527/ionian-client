@@ -47,12 +47,12 @@ func (proof *Proof) validateFormat() error {
 	return nil
 }
 
-func (proof *Proof) Validate(root common.Hash, content []byte, position uint32, numLeafNodes uint32) error {
+func (proof *Proof) Validate(root common.Hash, content []byte, position, numLeafNodes uint64) error {
 	contentHash := crypto.Keccak256Hash(content)
 	return proof.ValidateHash(root, contentHash, position, numLeafNodes)
 }
 
-func (proof *Proof) ValidateHash(root common.Hash, contentHash common.Hash, position uint32, numLeafNodes uint32) error {
+func (proof *Proof) ValidateHash(root, contentHash common.Hash, position, numLeafNodes uint64) error {
 	if err := proof.validateFormat(); err != nil {
 		return err
 	}
@@ -80,12 +80,12 @@ func (proof *Proof) ValidateHash(root common.Hash, contentHash common.Hash, posi
 	return nil
 }
 
-func (proof *Proof) calculateProofPosition(numLeafNodes uint32) uint32 {
-	var position uint32
+func (proof *Proof) calculateProofPosition(numLeafNodes uint64) uint64 {
+	var position uint64
 
 	for i := len(proof.Path) - 1; i >= 0; i-- {
-		leftSideDepth := uint32(math.Ceil(math.Log2(float64(numLeafNodes))))
-		leftSideLeafNodes := uint32(math.Pow(2, float64(leftSideDepth))) / 2
+		leftSideDepth := uint64(math.Ceil(math.Log2(float64(numLeafNodes))))
+		leftSideLeafNodes := uint64(math.Pow(2, float64(leftSideDepth))) / 2
 
 		if isLeft := proof.Path[i]; isLeft {
 			numLeafNodes = leftSideLeafNodes

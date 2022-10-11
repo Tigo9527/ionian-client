@@ -221,7 +221,7 @@ func (uploader *Uploader) uploadFile(file *File, tree *merkle.Tree) error {
 		segWithProof := node.SegmentWithProof{
 			Root:     tree.Root(),
 			Data:     segment,
-			Index:    uint32(segIndex),
+			Index:    uint64(segIndex),
 			Proof:    proof,
 			FileSize: uint64(file.Size()),
 		}

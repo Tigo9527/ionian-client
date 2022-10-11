@@ -82,11 +82,11 @@ func (file *File) Close() error {
 	return file.underlying.Close()
 }
 
-func (file *File) NumChunks() uint32 {
+func (file *File) NumChunks() uint64 {
 	return numSplits(file.Size(), DefaultChunkSize)
 }
 
-func (file *File) NumSegments() uint32 {
+func (file *File) NumSegments() uint64 {
 	return numSplits(file.Size(), DefaultSegmentSize)
 }
 
@@ -117,11 +117,11 @@ func (file *File) MerkleTree() (*merkle.Tree, error) {
 	return builder.Build(), nil
 }
 
-func numSplits(total int64, unit int) uint32 {
-	return uint32((total-1)/int64(unit) + 1)
+func numSplits(total int64, unit int) uint64 {
+	return uint64((total-1)/int64(unit) + 1)
 }
 
-func segmentRoot(chunks []byte, emptyChunksPadded ...uint32) common.Hash {
+func segmentRoot(chunks []byte, emptyChunksPadded ...uint64) common.Hash {
 	var builder merkle.TreeBuilder
 
 	// append chunks
@@ -132,7 +132,7 @@ func segmentRoot(chunks []byte, emptyChunksPadded ...uint32) common.Hash {
 
 	// append empty chunks
 	if len(emptyChunksPadded) > 0 && emptyChunksPadded[0] > 0 {
-		for i := uint32(0); i < emptyChunksPadded[0]; i++ {
+		for i := uint64(0); i < emptyChunksPadded[0]; i++ {
 			builder.AppendHash(EmptyChunkHash)
 		}
 	}

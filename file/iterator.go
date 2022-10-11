@@ -27,13 +27,13 @@ func NewIterator(file *os.File, fileSize int64, offset int64, batch int64, flowP
 
 	buf := make([]byte, batch)
 
-	chunks := (fileSize-1)/DefaultChunkSize + 1
+	chunks := numSplits(fileSize, DefaultChunkSize)
 	var paddedSize uint64
 	if flowPadding {
-		paddedChunks, _ := computePaddedSize(uint32(chunks))
+		paddedChunks, _ := computePaddedSize(chunks)
 		paddedSize = paddedChunks * DefaultChunkSize
 	} else {
-		paddedSize = uint64(chunks) * DefaultChunkSize
+		paddedSize = chunks * DefaultChunkSize
 	}
 
 	return &Iterator{

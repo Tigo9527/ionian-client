@@ -26,7 +26,7 @@ type FileInfo struct {
 type SegmentWithProof struct {
 	Root     common.Hash  `json:"root"`     // file merkle root
 	Data     []byte       `json:"data"`     // segment data
-	Index    uint32       `json:"index"`    // segment index
+	Index    uint64       `json:"index"`    // segment index
 	Proof    merkle.Proof `json:"proof"`    // segment merkle proof
 	FileSize uint64       `json:"fileSize"` // file size
 }

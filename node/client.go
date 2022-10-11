@@ -75,12 +75,12 @@ func (c *Client) UploadSegment(segment SegmentWithProof) (ret int, err error) {
 	return
 }
 
-func (c *Client) DownloadSegment(root common.Hash, startIndex, endIndex uint32) (data []byte, err error) {
+func (c *Client) DownloadSegment(root common.Hash, startIndex, endIndex uint64) (data []byte, err error) {
 	err = c.MiddlewarableProvider.CallContext(context.Background(), &data, "ionian_downloadSegment", root, startIndex, endIndex)
 	return
 }
 
-func (c *Client) DownloadSegmentWithProof(root common.Hash, index uint32) (segment *SegmentWithProof, err error) {
+func (c *Client) DownloadSegmentWithProof(root common.Hash, index uint64) (segment *SegmentWithProof, err error) {
 	err = c.MiddlewarableProvider.CallContext(context.Background(), &segment, "ionian_downloadSegmentWithProof", root, index)
 	return
 }

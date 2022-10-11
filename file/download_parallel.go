@@ -19,9 +19,9 @@ type SegmentDownloader struct {
 
 	withProof bool
 
-	segmentOffset uint32
-	numChunks     uint32
-	numSegments   uint32
+	segmentOffset uint64
+	numChunks     uint64
+	numSegments   uint64
 }
 
 func NewSegmentDownloader(clients []*node.Client, file *download.DownloadingFile, withProof bool) (*SegmentDownloader, error) {
@@ -38,7 +38,7 @@ func NewSegmentDownloader(clients []*node.Client, file *download.DownloadingFile
 
 		withProof: withProof,
 
-		segmentOffset: uint32(offset / DefaultSegmentSize),
+		segmentOffset: uint64(offset / DefaultSegmentSize),
 		numChunks:     numSplits(fileSize, DefaultChunkSize),
 		numSegments:   numSplits(fileSize, DefaultSegmentSize),
 	}, nil
@@ -58,7 +58,7 @@ func (downloader *SegmentDownloader) Download() error {
 
 // ParallelDo implements the parallel.Interface interface.
 func (downloader *SegmentDownloader) ParallelDo(routine, task int) (interface{}, error) {
-	segmentIndex := downloader.segmentOffset + uint32(task)
+	segmentIndex := downloader.segmentOffset + uint64(task)
 	startIndex := segmentIndex * DefaultSegmentMaxChunks
 	endIndex := startIndex + DefaultSegmentMaxChunks
 	if endIndex > downloader.numChunks {
@@ -109,15 +109,15 @@ func (downloader *SegmentDownloader) ParallelCollect(result *parallel.Result) er
 	return downloader.file.Write(result.Value.([]byte))
 }
 
-func (downloader *SegmentDownloader) downloadWithProof(client *node.Client, root common.Hash, startIndex, endIndex uint32) ([]byte, error) {
-	segmentIndex := startIndex / uint32(DefaultSegmentMaxChunks)
+func (downloader *SegmentDownloader) downloadWithProof(client *node.Client, root common.Hash, startIndex, endIndex uint64) ([]byte, error) {
+	segmentIndex := startIndex / DefaultSegmentMaxChunks
 
 	segment, err := client.DownloadSegmentWithProof(root, segmentIndex)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to download segment with proof from storage node")
 	}
 
-	if expectedDataLen := int(endIndex-startIndex) * DefaultChunkSize; expectedDataLen != len(segment.Data) {
+	if expectedDataLen := (endIndex - startIndex) * DefaultChunkSize; int(expectedDataLen) != len(segment.Data) {
 		return nil, errors.Errorf("Downloaded data length mismatch, expected = %v, actual = %v", expectedDataLen, len(segment.Data))
 	}
 
@@ -125,12 +125,12 @@ func (downloader *SegmentDownloader) downloadWithProof(client *node.Client, root
 	numSegmentsFlowPadded := (numChunksFlowPadded-1)/DefaultSegmentMaxChunks + 1
 
 	// pad empty chunks for the last segment to validate merkle proof
-	var emptyChunksPadded uint32
+	var emptyChunksPadded uint64
 	if numChunks := endIndex - startIndex; numChunks < DefaultSegmentMaxChunks {
-		if uint64(segmentIndex) < numSegmentsFlowPadded-1 {
+		if segmentIndex < numSegmentsFlowPadded-1 {
 			// pad empty chunks to a full segment
 			emptyChunksPadded = DefaultSegmentMaxChunks - numChunks
-		} else if lastSegmentChunks := uint32(numChunksFlowPadded % DefaultSegmentMaxChunks); numChunks < lastSegmentChunks {
+		} else if lastSegmentChunks := numChunksFlowPadded % DefaultSegmentMaxChunks; numChunks < lastSegmentChunks {
 			// pad for the last segment with flow padded empty chunks
 			emptyChunksPadded = lastSegmentChunks - numChunks
 		}
@@ -138,7 +138,7 @@ func (downloader *SegmentDownloader) downloadWithProof(client *node.Client, root
 
 	segmentRootHash := segmentRoot(segment.Data, emptyChunksPadded)
 
-	if err := segment.Proof.ValidateHash(root, segmentRootHash, segmentIndex, uint32(numSegmentsFlowPadded)); err != nil {
+	if err := segment.Proof.ValidateHash(root, segmentRootHash, segmentIndex, numSegmentsFlowPadded); err != nil {
 		return nil, errors.WithMessage(err, "Failed to validate proof")
 	}
 

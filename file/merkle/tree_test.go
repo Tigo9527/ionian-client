@@ -35,7 +35,7 @@ func TestTreeProof(t *testing.T) {
 
 		for i := 0; i < numChunks; i++ {
 			proof := tree.ProofAt(i)
-			assert.NoError(t, proof.Validate(tree.Root(), createChunkData(i), uint32(i), uint32(numChunks)))
+			assert.NoError(t, proof.Validate(tree.Root(), createChunkData(i), uint64(i), uint64(numChunks)))
 		}
 	}
 }
