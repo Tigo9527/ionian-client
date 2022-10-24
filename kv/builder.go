@@ -2,6 +2,7 @@ package kv
 
 import (
 	"errors"
+	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -18,11 +19,19 @@ func (builder *builder) AddStreamId(streamId common.Hash) {
 	builder.streamIds[streamId] = true
 }
 
-func (builder *builder) BuildTags() []byte {
+func (builder *builder) BuildTags(sorted ...bool) []byte {
 	var ids []common.Hash
 
 	for k := range builder.streamIds {
 		ids = append(ids, k)
+	}
+
+	if len(sorted) > 0 {
+		if sorted[0] {
+			sort.SliceStable(ids, func(i, j int) bool {
+				return ids[i].Hex() < ids[j].Hex()
+			})
+		}
 	}
 
 	return CreateTags(ids...)
@@ -37,11 +46,19 @@ type StreamDataBuilder struct {
 
 func NewStreamDataBuilder(version uint64) *StreamDataBuilder {
 	return &StreamDataBuilder{
+		AccessControlBuilder: AccessControlBuilder{
+			builder: builder{
+				streamIds: make(map[common.Hash]bool),
+			},
+			controls: make([]AccessControl, 0),
+		},
 		version: version,
+		reads:   make(map[common.Hash]map[common.Hash]bool),
+		writes:  make(map[common.Hash]map[common.Hash][]byte),
 	}
 }
 
-func (builder *StreamDataBuilder) Build() (*StreamData, error) {
+func (builder *StreamDataBuilder) Build(sorted ...bool) (*StreamData, error) {
 	var err error
 	data := StreamData{
 		Version: builder.version,
@@ -78,6 +95,29 @@ func (builder *StreamDataBuilder) Build() (*StreamData, error) {
 			if len(data.Writes) > maxSetSize {
 				return nil, errSizeTooLarge
 			}
+		}
+	}
+
+	if len(sorted) > 0 {
+		if sorted[0] {
+			sort.SliceStable(data.Reads, func(i, j int) bool {
+				streamIdI := data.Reads[i].StreamId.Hex()
+				streamIdJ := data.Reads[j].StreamId.Hex()
+				if streamIdI == streamIdJ {
+					return data.Reads[i].Key.Hex() < data.Reads[j].Key.Hex()
+				} else {
+					return streamIdI < streamIdJ
+				}
+			})
+			sort.SliceStable(data.Writes, func(i, j int) bool {
+				streamIdI := data.Writes[i].StreamId.Hex()
+				streamIdJ := data.Writes[j].StreamId.Hex()
+				if streamIdI == streamIdJ {
+					return data.Writes[i].Key.Hex() < data.Writes[j].Key.Hex()
+				} else {
+					return streamIdI < streamIdJ
+				}
+			})
 		}
 	}
 
@@ -164,7 +204,7 @@ func (builder *AccessControlBuilder) RevokeWriteRole(streamId common.Hash, accou
 }
 
 func (builder *AccessControlBuilder) RenounceWriteRole(streamId common.Hash) *AccessControlBuilder {
-	return builder.withControl(AclTypeGrantWriteRole, streamId, nil, nil)
+	return builder.withControl(AclTypeRenounceWriteRole, streamId, nil, nil)
 }
 
 func (builder *AccessControlBuilder) GrantSpecialWriteRole(streamId, key common.Hash, account common.Address) *AccessControlBuilder {

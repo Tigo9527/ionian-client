@@ -33,6 +33,34 @@ func (c *Client) Get(streamId, key common.Hash, startIndex, length uint64, versi
 	return c.node.KV().GetValue(streamId, key, startIndex, length, version...)
 }
 
+func (c *Client) GetTransactionResult(txSeq uint64) (result string, err error) {
+	return c.node.KV().GetTransactionResult(txSeq)
+}
+
+func (c *Client) GetHoldingStreamIds() (streamIds []common.Hash, err error) {
+	return c.node.KV().GetHoldingStreamIds()
+}
+
+func (c *Client) HasWritePermission(account common.Address, streamId, key common.Hash, version ...uint64) (hasPermission bool, err error) {
+	return c.node.KV().HasWritePermission(account, streamId, key, version...)
+}
+
+func (c *Client) IsAdmin(account common.Address, streamId common.Hash, version ...uint64) (isAdmin bool, err error) {
+	return c.node.KV().IsAdmin(account, streamId, version...)
+}
+
+func (c *Client) IsSpecialKey(streamId, key common.Hash, version ...uint64) (isSpecialKey bool, err error) {
+	return c.node.KV().IsSpecialKey(streamId, key, version...)
+}
+
+func (c *Client) IsWriterOfKey(account common.Address, streamId, key common.Hash, version ...uint64) (isWriter bool, err error) {
+	return c.node.KV().IsWriterOfKey(account, streamId, key, version...)
+}
+
+func (c *Client) IsWriterOfStream(account common.Address, streamId common.Hash, version ...uint64) (isWriter bool, err error) {
+	return c.node.KV().IsWriterOfStream(account, streamId, version...)
+}
+
 // Batcher returns a Batcher instance for kv operations in batch.
 func (c *Client) Batcher() *Batcher {
 	return newBatcher(math.MaxUint64, c)
@@ -70,7 +98,7 @@ func (b *Batcher) Exec() error {
 	// upload file
 	uploader := file.NewUploader(b.client.flow, b.client.node)
 	if err = uploader.Upload(tmpFilename, b.BuildTags()); err != nil {
-		return errors.WithMessagef(err, "Failed to upload file", tmpFilename)
+		return errors.WithMessagef(err, "Failed to upload file %v", tmpFilename)
 	}
 
 	// delete tmp file if completed
