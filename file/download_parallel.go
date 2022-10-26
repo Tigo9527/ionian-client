@@ -75,7 +75,7 @@ func (downloader *SegmentDownloader) ParallelDo(routine, task int) (interface{},
 	if downloader.withProof {
 		segment, err = downloader.downloadWithProof(downloader.clients[routine], root, startIndex, endIndex)
 	} else {
-		segment, err = downloader.clients[routine].DownloadSegment(root, startIndex, endIndex)
+		segment, err = downloader.clients[routine].Ionian().DownloadSegment(root, startIndex, endIndex)
 	}
 
 	if err != nil {
@@ -112,7 +112,7 @@ func (downloader *SegmentDownloader) ParallelCollect(result *parallel.Result) er
 func (downloader *SegmentDownloader) downloadWithProof(client *node.Client, root common.Hash, startIndex, endIndex uint64) ([]byte, error) {
 	segmentIndex := startIndex / DefaultSegmentMaxChunks
 
-	segment, err := client.DownloadSegmentWithProof(root, segmentIndex)
+	segment, err := client.Ionian().DownloadSegmentWithProof(root, segmentIndex)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to download segment with proof from storage node")
 	}

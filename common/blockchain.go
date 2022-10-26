@@ -9,6 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var Web3LogEnabled = false
+
 func MustNewWeb3(url, key string) *web3go.Client {
 	client, err := NewWeb3(url, key)
 	if err != nil {
@@ -25,6 +27,10 @@ func NewWeb3(url, key string) (*web3go.Client, error) {
 		WithRetry(3, time.Second).
 		WithTimout(5 * time.Second).
 		WithSignerManager(sm)
+
+	if Web3LogEnabled {
+		option = option.WithLooger(logrus.StandardLogger().Out)
+	}
 
 	return web3go.NewClientWithOption(url, *option)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Ionian-Web3-Storage/ionian-client/common"
 	"github.com/Ionian-Web3-Storage/ionian-client/contract"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -30,6 +31,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&logColorForced, "log-force-color", false, "Force to output colorful logs")
 	rootCmd.PersistentFlags().Uint64Var(&contract.CustomGasPrice, "gas-price", 0, "Custom gas price to send transaction")
 	rootCmd.PersistentFlags().Uint64Var(&contract.CustomGasLimit, "gas-limit", 0, "Custom gas limit to send transaction")
+	rootCmd.PersistentFlags().BoolVar(&common.Web3LogEnabled, "web3-log-enabled", false, "Enable log for web3 RPC")
 }
 
 func initLog() {

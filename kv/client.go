@@ -14,14 +14,14 @@ import (
 // Client is used for users to communicate with server for kv operations.
 type Client struct {
 	node *node.Client
-	flow *contract.Flow
+	flow *contract.FlowExt
 }
 
 // NewClient creates a new client for kv operations.
 //
 // Generally, you could refer to the `upload` function in `cmd/upload.go` file
 // for how to create storage node client and flow contract client.
-func NewClient(node *node.Client, flow *contract.Flow) *Client {
+func NewClient(node *node.Client, flow *contract.FlowExt) *Client {
 	return &Client{
 		node: node,
 		flow: flow,
@@ -97,7 +97,11 @@ func (b *Batcher) Exec() error {
 
 	// upload file
 	uploader := file.NewUploader(b.client.flow, b.client.node)
-	if err = uploader.Upload(tmpFilename, b.BuildTags()); err != nil {
+	opt := file.UploadOption{
+		Tags:  b.BuildTags(),
+		Force: true,
+	}
+	if err = uploader.Upload(tmpFilename, opt); err != nil {
 		return errors.WithMessagef(err, "Failed to upload file %v", tmpFilename)
 	}
 

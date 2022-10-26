@@ -18,9 +18,9 @@ func NewFlow(file *File, tags []byte) *Flow {
 	return &Flow{file, tags}
 }
 
-func (flow *Flow) CreateSubmission() (*contract.Submission, error) {
+func (flow *Flow) CreateSubmission() (*contract.IonianSubmission, error) {
 	// TODO(kevin): limit file size, e.g., 2^31
-	submission := contract.Submission{
+	submission := contract.IonianSubmission{
 		Length: big.NewInt(flow.file.Size()),
 		Tags:   flow.tags,
 	}
@@ -91,7 +91,7 @@ func (flow *Flow) splitNodes() []int64 {
 	return nodes
 }
 
-func (flow *Flow) createNode(offset, chunks int64) (*contract.SubmissionNode, error) {
+func (flow *Flow) createNode(offset, chunks int64) (*contract.IonianSubmissionNode, error) {
 	batch := chunks
 	if chunks > DefaultSegmentMaxChunks {
 		batch = DefaultSegmentMaxChunks
@@ -100,7 +100,7 @@ func (flow *Flow) createNode(offset, chunks int64) (*contract.SubmissionNode, er
 	return flow.createSegmentNode(offset, DefaultChunkSize*batch, DefaultChunkSize*chunks)
 }
 
-func (flow *Flow) createSegmentNode(offset, batch, size int64) (*contract.SubmissionNode, error) {
+func (flow *Flow) createSegmentNode(offset, batch, size int64) (*contract.IonianSubmissionNode, error) {
 	iter := NewIterator(flow.file.underlying, flow.file.Size(), offset, batch, true)
 	var builder merkle.TreeBuilder
 
@@ -127,7 +127,7 @@ func (flow *Flow) createSegmentNode(offset, batch, size int64) (*contract.Submis
 	numChunks := size / DefaultChunkSize
 	height := int64(math.Log2(float64(numChunks)))
 
-	return &contract.SubmissionNode{
+	return &contract.IonianSubmissionNode{
 		Root:   builder.Build().Root(),
 		Height: big.NewInt(height),
 	}, nil

@@ -2,42 +2,51 @@ package contract
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
-	"github.com/sirupsen/logrus"
 )
 
-type Flow struct {
+type FlowExt struct {
 	*contract
+	*Flow
 }
 
-func MustNewFlow(contractAddr common.Address, clientWithSigner *web3go.Client) *Flow {
-	return &Flow{mustNewContract(abiFlow, contractAddr, clientWithSigner)}
+func NewFlowExt(flowAddress common.Address, clientWithSigner *web3go.Client) (*FlowExt, error) {
+	backend, signer := clientWithSigner.ToClientForContract()
+
+	contract, err := newContract(clientWithSigner, signer)
+	if err != nil {
+		return nil, err
+	}
+
+	flow, err := NewFlow(flowAddress, backend)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FlowExt{contract, flow}, nil
 }
 
-func (flow *Flow) Submit(submission Submission) (common.Hash, error) {
-	logrus.WithField("submission", submission).Debug("Begin to submit flow data to blockchain")
-	return flow.contract.send("submit", submission)
+func (flow *FlowExt) SubmitExt(submission IonianSubmission) (common.Hash, error) {
+	opts, err := flow.CreateTransactOpts()
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	tx, err := flow.Submit(opts, submission)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	return tx.Hash(), nil
 }
 
-type SubmissionNode struct {
-	Root   [32]byte
-	Height *big.Int // sub-tree height of this node
-}
-
-type Submission struct {
-	Length *big.Int // file size
-	Tags   []byte
-	Nodes  []SubmissionNode
-}
-
-func (sub Submission) String() string {
+func (submission IonianSubmission) String() string {
 	var heights []uint64
-	for _, v := range sub.Nodes {
+	for _, v := range submission.Nodes {
 		heights = append(heights, v.Height.Uint64())
 	}
 
-	return fmt.Sprintf("{ Size: %v, Heights: %v }", sub.Length, heights)
+	return fmt.Sprintf("{ Size: %v, Heights: %v }", submission.Length, heights)
 }

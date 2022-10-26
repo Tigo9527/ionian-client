@@ -76,7 +76,7 @@ func getFileStatus(c *gin.Context) (interface{}, error) {
 	var notFinalized bool
 
 	for _, client := range allClients {
-		info, err := client.GetFileInfo(root)
+		info, err := client.Ionian().GetFileInfo(root)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func uploadLocalFile(c *gin.Context) (interface{}, error) {
 
 	filename := getFilePath(input.Path, false)
 
-	if err := uploader.Upload(filename, nil); err != nil {
+	if err := uploader.Upload(filename); err != nil {
 		return nil, err
 	}
 

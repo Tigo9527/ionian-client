@@ -7,7 +7,7 @@ import (
 	"github.com/Ionian-Web3-Storage/ionian-client/file/merkle"
 	"github.com/Ionian-Web3-Storage/ionian-client/node"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -15,25 +15,35 @@ import (
 // maxDataSize is the maximum data size to upload on blockchain directly.
 // const maxDataSize = int64(4 * 1024)
 
-type Uploader struct {
-	ionian *contract.Flow
-	client *node.Client
+type UploadOption struct {
+	Tags  []byte // for kv operations
+	Force bool   // for kv to upload same file
 }
 
-func NewUploader(ionian *contract.Flow, client *node.Client) *Uploader {
+type Uploader struct {
+	flow   *contract.FlowExt
+	client *node.IonianClient
+}
+
+func NewUploader(flow *contract.FlowExt, client *node.Client) *Uploader {
 	return &Uploader{
-		ionian: ionian,
-		client: client,
+		flow:   flow,
+		client: client.Ionian(),
 	}
 }
 
 func NewUploaderLight(client *node.Client) *Uploader {
 	return &Uploader{
-		client: client,
+		client: client.Ionian(),
 	}
 }
 
-func (uploader *Uploader) Upload(filename string, tags []byte) error {
+func (uploader *Uploader) Upload(filename string, option ...UploadOption) error {
+	var opt UploadOption
+	if len(option) > 0 {
+		opt = option[0]
+	}
+
 	// Open file to upload
 	file, err := Open(filename)
 	if err != nil {
@@ -62,7 +72,7 @@ func (uploader *Uploader) Upload(filename string, tags []byte) error {
 
 	logrus.WithField("info", info).Debug("Log entry retrieved from storage node")
 
-	if uploader.ionian == nil && info == nil {
+	if uploader.flow == nil && info == nil {
 		return errors.New("log entry not available on storage node")
 	}
 
@@ -75,18 +85,28 @@ func (uploader *Uploader) Upload(filename string, tags []byte) error {
 	// 	return uploader.uploadSmallData(filename)
 	// }
 
+	// already finalized
 	if info != nil && info.Finalized {
-		return errors.New("File already exists on Ionian network")
+		if !opt.Force {
+			return errors.New("File already exists on Ionian network")
+		}
+
+		// Allow to upload duplicated file for KV scenario
+		if err = uploader.uploadDuplicatedFile(file, opt.Tags, tree.Root()); err != nil {
+			return errors.WithMessage(err, "Failed to upload duplicated file")
+		}
+
+		return nil
 	}
 
 	if info == nil {
 		// Append log on blockchain
-		if err = uploader.submitLogEntry(file, tags, tree); err != nil {
+		if _, err = uploader.submitLogEntry(file, opt.Tags); err != nil {
 			return errors.WithMessage(err, "Failed to submit log entry")
 		}
 
 		// Wait for storage node to retrieve log entry from blockchain
-		if err = uploader.waitForLogEntry(tree.Root()); err != nil {
+		if err = uploader.waitForLogEntry(tree.Root(), false); err != nil {
 			return errors.WithMessage(err, "Failed to check if log entry available on storage node")
 		}
 	}
@@ -97,7 +117,7 @@ func (uploader *Uploader) Upload(filename string, tags []byte) error {
 	}
 
 	// Wait for transaction finality
-	if err = uploader.waitForFinality(tree.Root()); err != nil {
+	if err = uploader.waitForLogEntry(tree.Root(), true); err != nil {
 		return errors.WithMessage(err, "Failed to wait for transaction finality on storage node")
 	}
 
@@ -120,53 +140,32 @@ func (uploader *Uploader) Upload(filename string, tags []byte) error {
 // 	return uploader.waitForSuccessfulExecution(hash)
 // }
 
-func (uploader *Uploader) waitForSuccessfulExecution(txHash common.Hash) error {
-	logrus.WithField("tx", txHash).Info("Wait for transaction execution")
-
-	receipt, err := uploader.ionian.WaitForReceipt(txHash)
-	if err != nil {
-		return errors.WithMessage(err, "Failed to wait for receipt")
-	}
-
-	if receipt.Status == nil {
-		return errors.New("status not found in receipt")
-	}
-
-	switch *receipt.Status {
-	case types.ReceiptStatusSuccessful:
-		return nil
-	case types.ReceiptStatusFailed:
-		if receipt.TxExecErrorMsg == nil {
-			return errors.New("Transaction execution failed")
-		}
-
-		return errors.Errorf("Transaction execution failed, %v", *receipt.TxExecErrorMsg)
-	default:
-		return errors.Errorf("Unknown receipt status %v", *receipt.Status)
-	}
-}
-
-func (uploader *Uploader) submitLogEntry(file *File, tags []byte, tree *merkle.Tree) error {
+func (uploader *Uploader) submitLogEntry(file *File, tags []byte) (*types.Receipt, error) {
+	// Construct submission
 	flow := NewFlow(file, tags)
 	submission, err := flow.CreateSubmission()
 	if err != nil {
-		return errors.WithMessage(err, "Failed to create flow submission")
+		return nil, errors.WithMessage(err, "Failed to create flow submission")
 	}
 
 	// Submit log entry to smart contract.
-	hash, err := uploader.ionian.Submit(*submission)
+	hash, err := uploader.flow.SubmitExt(*submission)
 	if err != nil {
-		return errors.WithMessage(err, "Failed to send transaction to append log entry")
+		return nil, errors.WithMessage(err, "Failed to send transaction to append log entry")
 	}
 
 	logrus.WithField("hash", hash.Hex()).Info("Succeeded to send transaction to append log entry")
 
-	return uploader.waitForSuccessfulExecution(hash)
+	// Wait for successful execution
+	return uploader.flow.WaitForReceipt(hash, true)
 }
 
 // Wait for log entry ready on storage node.
-func (uploader *Uploader) waitForLogEntry(root common.Hash) error {
-	logrus.WithField("root", root).Info("Wait for log entry on storage node")
+func (uploader *Uploader) waitForLogEntry(root common.Hash, finalityRequired bool) error {
+	logrus.WithFields(logrus.Fields{
+		"root":     root,
+		"finality": finalityRequired,
+	}).Info("Wait for log entry on storage node")
 
 	for {
 		time.Sleep(time.Second)
@@ -176,9 +175,16 @@ func (uploader *Uploader) waitForLogEntry(root common.Hash) error {
 			return errors.WithMessage(err, "Failed to get file info from storage node")
 		}
 
-		if info != nil {
-			break
+		// log entry unavailable yet
+		if info == nil {
+			continue
 		}
+
+		if finalityRequired && !info.Finalized {
+			continue
+		}
+
+		break
 	}
 
 	return nil
@@ -249,25 +255,6 @@ func (uploader *Uploader) uploadFile(file *File, tree *merkle.Tree) error {
 	}
 
 	logrus.Info("Completed to upload file")
-
-	return nil
-}
-
-func (uploader *Uploader) waitForFinality(root common.Hash) error {
-	logrus.WithField("root", root).Info("Wait for transaction finalized on storage node")
-
-	for {
-		time.Sleep(time.Second)
-
-		info, err := uploader.client.GetFileInfo(root)
-		if err != nil {
-			return errors.WithMessage(err, "Failed to get file info from storage node")
-		}
-
-		if info != nil && info.Finalized {
-			break
-		}
-	}
 
 	return nil
 }

@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.7.4
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/openweb3/go-rpc-provider v0.2.7
-	github.com/openweb3/web3go v0.1.2-0.20220627062242-ecc1ba876617
+	github.com/openweb3/web3go v0.2.1-0.20221026093812-d63d83edcfec
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
@@ -50,7 +50,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/openweb3/go-sdk-common v0.0.0-20220524083215-d22d44765e44 // indirect
+	github.com/openweb3/go-sdk-common v0.0.0-20220720074746-a7134e1d372c // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/tsdb v0.7.1 // indirect
 	github.com/rjeczalik/notify v0.9.1 // indirect

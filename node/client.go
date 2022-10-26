@@ -11,6 +11,10 @@ import (
 type Client struct {
 	url string
 	*providers.MiddlewarableProvider
+
+	ionian *IonianClient
+	admin  *AdminClient
+	kv     *KvClient
 }
 
 func MustNewClient(url string, option ...providers.Option) *Client {
@@ -36,6 +40,10 @@ func NewClient(url string, option ...providers.Option) (*Client, error) {
 	return &Client{
 		url:                   url,
 		MiddlewarableProvider: provider,
+
+		ionian: &IonianClient{provider},
+		admin:  &AdminClient{provider},
+		kv:     &KvClient{provider},
 	}, nil
 }
 
@@ -54,50 +62,69 @@ func (c *Client) URL() string {
 	return c.url
 }
 
+func (c *Client) Ionian() *IonianClient {
+	return c.ionian
+}
+
+func (c *Client) Admin() *AdminClient {
+	return c.admin
+}
+
 func (c *Client) KV() *KvClient {
-	return newKvClient(c.MiddlewarableProvider)
+	return c.kv
 }
 
 // Ionian RPCs
+type IonianClient struct {
+	provider *providers.MiddlewarableProvider
+}
 
-func (c *Client) GetStatus() (status Status, err error) {
-	err = c.MiddlewarableProvider.CallContext(context.Background(), &status, "ionian_getStatus")
+func (c *IonianClient) GetStatus() (status Status, err error) {
+	err = c.provider.CallContext(context.Background(), &status, "ionian_getStatus")
 	return
 }
 
-func (c *Client) GetFileInfo(root common.Hash) (file *FileInfo, err error) {
-	err = c.MiddlewarableProvider.CallContext(context.Background(), &file, "ionian_getFileInfo", root)
+func (c *IonianClient) GetFileInfo(root common.Hash) (file *FileInfo, err error) {
+	err = c.provider.CallContext(context.Background(), &file, "ionian_getFileInfo", root)
 	return
 }
 
-func (c *Client) UploadSegment(segment SegmentWithProof) (ret int, err error) {
-	err = c.MiddlewarableProvider.CallContext(context.Background(), &ret, "ionian_uploadSegment", segment)
+func (c *IonianClient) GetFileInfoByTxSeq(txSeq uint64) (file *FileInfo, err error) {
+	err = c.provider.CallContext(context.Background(), &file, "ionian_getFileInfoByTxSeq", txSeq)
 	return
 }
 
-func (c *Client) DownloadSegment(root common.Hash, startIndex, endIndex uint64) (data []byte, err error) {
-	err = c.MiddlewarableProvider.CallContext(context.Background(), &data, "ionian_downloadSegment", root, startIndex, endIndex)
+func (c *IonianClient) UploadSegment(segment SegmentWithProof) (ret int, err error) {
+	err = c.provider.CallContext(context.Background(), &ret, "ionian_uploadSegment", segment)
 	return
 }
 
-func (c *Client) DownloadSegmentWithProof(root common.Hash, index uint64) (segment *SegmentWithProof, err error) {
-	err = c.MiddlewarableProvider.CallContext(context.Background(), &segment, "ionian_downloadSegmentWithProof", root, index)
+func (c *IonianClient) DownloadSegment(root common.Hash, startIndex, endIndex uint64) (data []byte, err error) {
+	err = c.provider.CallContext(context.Background(), &data, "ionian_downloadSegment", root, startIndex, endIndex)
+	return
+}
+
+func (c *IonianClient) DownloadSegmentWithProof(root common.Hash, index uint64) (segment *SegmentWithProof, err error) {
+	err = c.provider.CallContext(context.Background(), &segment, "ionian_downloadSegmentWithProof", root, index)
 	return
 }
 
 // Admin RPCs
+type AdminClient struct {
+	provider *providers.MiddlewarableProvider
+}
 
-func (c *Client) Shutdown() (ret int, err error) {
-	err = c.MiddlewarableProvider.CallContext(context.Background(), &ret, "admin_shutdown")
+func (c *AdminClient) Shutdown() (ret int, err error) {
+	err = c.provider.CallContext(context.Background(), &ret, "admin_shutdown")
 	return
 }
 
-func (c *Client) StartSyncFile(txSeq uint64) (ret int, err error) {
-	err = c.MiddlewarableProvider.CallContext(context.Background(), &ret, "admin_startSyncFile", txSeq)
+func (c *AdminClient) StartSyncFile(txSeq uint64) (ret int, err error) {
+	err = c.provider.CallContext(context.Background(), &ret, "admin_startSyncFile", txSeq)
 	return
 }
 
-func (c *Client) GetSyncStatus(txSeq uint64) (status string, err error) {
-	err = c.MiddlewarableProvider.CallContext(context.Background(), &status, "admin_getSyncStatus", txSeq)
+func (c *AdminClient) GetSyncStatus(txSeq uint64) (status string, err error) {
+	err = c.provider.CallContext(context.Background(), &status, "admin_getSyncStatus", txSeq)
 	return
 }

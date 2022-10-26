@@ -54,7 +54,7 @@ func (downloader *Downloader) Download(root, filename string, proof bool) error 
 func (downloader *Downloader) queryFile(root common.Hash) (info *node.FileInfo, err error) {
 	// requires file finalized on all storage nodes
 	for _, v := range downloader.clients {
-		info, err = v.GetFileInfo(root)
+		info, err = v.Ionian().GetFileInfo(root)
 		if err != nil {
 			return nil, errors.WithMessagef(err, "Failed to get file info on node %v", v.URL())
 		}

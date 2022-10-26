@@ -21,6 +21,8 @@ var (
 		key      string
 
 		node string
+
+		force bool
 	}
 
 	uploadCmd = &cobra.Command{
@@ -45,6 +47,8 @@ func init() {
 	uploadCmd.Flags().StringVar(&uploadArgs.node, "node", "", "Ionian storage node URL")
 	uploadCmd.MarkFlagRequired("node")
 
+	uploadCmd.Flags().BoolVar(&uploadArgs.force, "force", false, "Force to upload file even already exists")
+
 	rootCmd.AddCommand(uploadCmd)
 }
 
@@ -52,14 +56,20 @@ func upload(*cobra.Command, []string) {
 	client := common.MustNewWeb3(uploadArgs.url, uploadArgs.key)
 	defer client.Close()
 	contractAddr := ethCommon.HexToAddress(uploadArgs.contract)
-	ionian := contract.MustNewFlow(contractAddr, client)
+	flow, err := contract.NewFlowExt(contractAddr, client)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to create flow contract")
+	}
 
 	node := node.MustNewClient(uploadArgs.node)
 	defer node.Close()
 
-	uploader := file.NewUploader(ionian, node)
-	tags := hexutil.MustDecode(uploadArgs.tags)
-	if err := uploader.Upload(uploadArgs.file, tags); err != nil {
+	uploader := file.NewUploader(flow, node)
+	opt := file.UploadOption{
+		Tags:  hexutil.MustDecode(uploadArgs.tags),
+		Force: uploadArgs.force,
+	}
+	if err := uploader.Upload(uploadArgs.file, opt); err != nil {
 		logrus.WithError(err).Fatal("Failed to upload file")
 	}
 }
