@@ -11,7 +11,7 @@ type KvClient struct {
 	provider *providers.MiddlewarableProvider
 }
 
-func (c *KvClient) GetValue(streamId, key common.Hash, startIndex, length uint64, version ...uint64) (val *Value, err error) {
+func (c *KvClient) GetValue(streamId common.Hash, key []byte, startIndex, length uint64, version ...uint64) (val *Value, err error) {
 	args := []interface{}{streamId, key, startIndex, length}
 	if len(version) > 0 {
 		args = append(args, version[0])
@@ -30,7 +30,7 @@ func (c *KvClient) GetHoldingStreamIds() (streamIds []common.Hash, err error) {
 	return
 }
 
-func (c *KvClient) HasWritePermission(account common.Address, streamId, key common.Hash, version ...uint64) (hasPermission bool, err error) {
+func (c *KvClient) HasWritePermission(account common.Address, streamId common.Hash, key []byte, version ...uint64) (hasPermission bool, err error) {
 	args := []interface{}{account, streamId, key}
 	if len(version) > 0 {
 		args = append(args, version[0])
@@ -48,7 +48,7 @@ func (c *KvClient) IsAdmin(account common.Address, streamId common.Hash, version
 	return
 }
 
-func (c *KvClient) IsSpecialKey(streamId, key common.Hash, version ...uint64) (isSpecialKey bool, err error) {
+func (c *KvClient) IsSpecialKey(streamId common.Hash, key []byte, version ...uint64) (isSpecialKey bool, err error) {
 	args := []interface{}{streamId, key}
 	if len(version) > 0 {
 		args = append(args, version[0])
@@ -57,7 +57,7 @@ func (c *KvClient) IsSpecialKey(streamId, key common.Hash, version ...uint64) (i
 	return
 }
 
-func (c *KvClient) IsWriterOfKey(account common.Address, streamId, key common.Hash, version ...uint64) (isWriter bool, err error) {
+func (c *KvClient) IsWriterOfKey(account common.Address, streamId common.Hash, key []byte, version ...uint64) (isWriter bool, err error) {
 	args := []interface{}{account, streamId, key}
 	if len(version) > 0 {
 		args = append(args, version[0])

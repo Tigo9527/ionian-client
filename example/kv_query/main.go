@@ -16,7 +16,7 @@ func main() {
 		return
 	}
 	streamId := ethCommon.HexToHash("0x000000000000000000000000000000000000000000000000000000000000f2bd")
-	key := ethCommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001")
+	key := []byte("TESTKEY")
 	account := ethCommon.HexToAddress("0x578dd2bfc41bb66e9f0ae0802c613996440c9597")
 	kvClient := client.KV()
 	val, _ := kvClient.GetValue(streamId, key, 0, 1000)

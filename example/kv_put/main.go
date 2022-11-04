@@ -31,7 +31,7 @@ func main() {
 	kvClient := kv.NewClient(ionianClient, ionian)
 	batcher := kvClient.Batcher()
 	batcher.Set(ethCommon.HexToHash("0x000000000000000000000000000000000000000000000000000000000000f2bd"),
-		ethCommon.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"),
+		[]byte("TESTKEY"),
 		[]byte{69, 70, 71, 72, 73},
 	)
 	err = batcher.Exec()

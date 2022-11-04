@@ -5,11 +5,18 @@ import (
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 const maxSetSize = 1 << 16 // 64K
 
+const maxKeySize = 1 << 24 // 16.7M
+
 var errSizeTooLarge = errors.New("size too large")
+
+var errKeyTooLarge = errors.New("key too large")
+
+var errKeyIsEmpty = errors.New("key is empty")
 
 type builder struct {
 	streamIds map[common.Hash]bool // to build tags
@@ -40,8 +47,8 @@ func (builder *builder) BuildTags(sorted ...bool) []byte {
 type StreamDataBuilder struct {
 	AccessControlBuilder
 	version uint64
-	reads   map[common.Hash]map[common.Hash]bool
-	writes  map[common.Hash]map[common.Hash][]byte
+	reads   map[common.Hash]map[string]bool
+	writes  map[common.Hash]map[string][]byte
 }
 
 func NewStreamDataBuilder(version uint64) *StreamDataBuilder {
@@ -53,8 +60,8 @@ func NewStreamDataBuilder(version uint64) *StreamDataBuilder {
 			controls: make([]AccessControl, 0),
 		},
 		version: version,
-		reads:   make(map[common.Hash]map[common.Hash]bool),
-		writes:  make(map[common.Hash]map[common.Hash][]byte),
+		reads:   make(map[common.Hash]map[string]bool),
+		writes:  make(map[common.Hash]map[string][]byte),
 	}
 }
 
@@ -72,9 +79,16 @@ func (builder *StreamDataBuilder) Build(sorted ...bool) (*StreamData, error) {
 	// reads
 	for streamId, keys := range builder.reads {
 		for k := range keys {
+			key := hexutil.MustDecode(k)
+			if len(key) > maxKeySize {
+				return nil, errKeyTooLarge
+			}
+			if len(key) == 0 {
+				return nil, errKeyIsEmpty
+			}
 			data.Reads = append(data.Reads, StreamRead{
 				StreamId: streamId,
-				Key:      k,
+				Key:      key,
 			})
 
 			if len(data.Reads) > maxSetSize {
@@ -86,9 +100,16 @@ func (builder *StreamDataBuilder) Build(sorted ...bool) (*StreamData, error) {
 	// writes
 	for streamId, keys := range builder.writes {
 		for k, d := range keys {
+			key := hexutil.MustDecode(k)
+			if len(key) > maxKeySize {
+				return nil, errKeyTooLarge
+			}
+			if len(key) == 0 {
+				return nil, errKeyIsEmpty
+			}
 			data.Writes = append(data.Writes, StreamWrite{
 				StreamId: streamId,
-				Key:      k,
+				Key:      key,
 				Data:     d,
 			})
 
@@ -104,7 +125,7 @@ func (builder *StreamDataBuilder) Build(sorted ...bool) (*StreamData, error) {
 				streamIdI := data.Reads[i].StreamId.Hex()
 				streamIdJ := data.Reads[j].StreamId.Hex()
 				if streamIdI == streamIdJ {
-					return data.Reads[i].Key.Hex() < data.Reads[j].Key.Hex()
+					return hexutil.Encode(data.Reads[i].Key) < hexutil.Encode(data.Reads[j].Key)
 				} else {
 					return streamIdI < streamIdJ
 				}
@@ -113,7 +134,7 @@ func (builder *StreamDataBuilder) Build(sorted ...bool) (*StreamData, error) {
 				streamIdI := data.Writes[i].StreamId.Hex()
 				streamIdJ := data.Writes[j].StreamId.Hex()
 				if streamIdI == streamIdJ {
-					return data.Writes[i].Key.Hex() < data.Writes[j].Key.Hex()
+					return hexutil.Encode(data.Writes[i].Key) < hexutil.Encode(data.Writes[j].Key)
 				} else {
 					return streamIdI < streamIdJ
 				}
@@ -129,25 +150,25 @@ func (builder *StreamDataBuilder) SetVersion(version uint64) *StreamDataBuilder 
 	return builder
 }
 
-func (builder *StreamDataBuilder) Watch(streamId, key common.Hash) *StreamDataBuilder {
+func (builder *StreamDataBuilder) Watch(streamId common.Hash, key []byte) *StreamDataBuilder {
 	if keys, ok := builder.reads[streamId]; ok {
-		keys[key] = true
+		keys[hexutil.Encode(key)] = true
 	} else {
-		builder.reads[streamId] = make(map[common.Hash]bool)
-		builder.reads[streamId][key] = true
+		builder.reads[streamId] = make(map[string]bool)
+		builder.reads[streamId][hexutil.Encode(key)] = true
 	}
 
 	return builder
 }
 
-func (builder *StreamDataBuilder) Set(streamId, key common.Hash, data []byte) *StreamDataBuilder {
+func (builder *StreamDataBuilder) Set(streamId common.Hash, key []byte, data []byte) *StreamDataBuilder {
 	builder.AddStreamId(streamId)
 
 	if keys, ok := builder.writes[streamId]; ok {
-		keys[key] = data
+		keys[hexutil.Encode(key)] = data
 	} else {
-		builder.writes[streamId] = make(map[common.Hash][]byte)
-		builder.writes[streamId][key] = data
+		builder.writes[streamId] = make(map[string][]byte)
+		builder.writes[streamId][hexutil.Encode(key)] = data
 	}
 
 	return builder
@@ -166,7 +187,7 @@ func (builder *AccessControlBuilder) Build() ([]AccessControl, error) {
 	return builder.controls, nil
 }
 
-func (builder *AccessControlBuilder) withControl(t AccessControlType, streamId common.Hash, account *common.Address, key *common.Hash) *AccessControlBuilder {
+func (builder *AccessControlBuilder) withControl(t AccessControlType, streamId common.Hash, account *common.Address, key *[]byte) *AccessControlBuilder {
 	builder.AddStreamId(streamId)
 
 	builder.controls = append(builder.controls, AccessControl{
@@ -187,11 +208,11 @@ func (builder *AccessControlBuilder) RenounceAdminRole(streamId common.Hash) *Ac
 	return builder.withControl(AclTypeRenounceAdminRole, streamId, nil, nil)
 }
 
-func (builder *AccessControlBuilder) SetKeyToSpecial(streamId, key common.Hash) *AccessControlBuilder {
+func (builder *AccessControlBuilder) SetKeyToSpecial(streamId common.Hash, key []byte) *AccessControlBuilder {
 	return builder.withControl(AclTypeSetKeyToSpecial, streamId, nil, &key)
 }
 
-func (builder *AccessControlBuilder) SetKeyToNormal(streamId, key common.Hash) *AccessControlBuilder {
+func (builder *AccessControlBuilder) SetKeyToNormal(streamId common.Hash, key []byte) *AccessControlBuilder {
 	return builder.withControl(AclTypeSetKeyToNormal, streamId, nil, &key)
 }
 
@@ -207,14 +228,14 @@ func (builder *AccessControlBuilder) RenounceWriteRole(streamId common.Hash) *Ac
 	return builder.withControl(AclTypeRenounceWriteRole, streamId, nil, nil)
 }
 
-func (builder *AccessControlBuilder) GrantSpecialWriteRole(streamId, key common.Hash, account common.Address) *AccessControlBuilder {
+func (builder *AccessControlBuilder) GrantSpecialWriteRole(streamId common.Hash, key []byte, account common.Address) *AccessControlBuilder {
 	return builder.withControl(AclTypeGrantSpecialWriteRole, streamId, &account, &key)
 }
 
-func (builder *AccessControlBuilder) RevokeSpecialWriteRole(streamId, key common.Hash, account common.Address) *AccessControlBuilder {
+func (builder *AccessControlBuilder) RevokeSpecialWriteRole(streamId common.Hash, key []byte, account common.Address) *AccessControlBuilder {
 	return builder.withControl(AclTypeRevokeSpecialWriteRole, streamId, &account, &key)
 }
 
-func (builder *AccessControlBuilder) RenounceSpecialWriteRole(streamId, key common.Hash) *AccessControlBuilder {
+func (builder *AccessControlBuilder) RenounceSpecialWriteRole(streamId common.Hash, key []byte) *AccessControlBuilder {
 	return builder.withControl(AclTypeRenounceSpecialWriteRole, streamId, nil, &key)
 }

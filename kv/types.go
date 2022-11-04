@@ -46,12 +46,12 @@ const (
 
 type StreamRead struct {
 	StreamId common.Hash
-	Key      common.Hash
+	Key      []byte
 }
 
 type StreamWrite struct {
 	StreamId common.Hash
-	Key      common.Hash
+	Key      []byte
 	Data     []byte
 }
 
@@ -59,7 +59,7 @@ type AccessControl struct {
 	Type     AccessControlType
 	StreamId common.Hash
 	Account  *common.Address
-	Key      *common.Hash
+	Key      *[]byte
 }
 
 type StreamData struct {
@@ -73,13 +73,18 @@ type StreamData struct {
 func (sd *StreamData) Size() int {
 	var size int
 
-	size += 8                                     // version
-	size += 4 + 2*common.HashLength*len(sd.Reads) // reads
+	size += 8 // version
+
+	// reads
+	size += 4 // size
+	for _, v := range sd.Reads {
+		size += common.HashLength + 3 + len(v.Key)
+	}
 
 	// writes
 	size += 4 // size
 	for _, v := range sd.Writes {
-		size += 2*common.HashLength + 8 + len(v.Data)
+		size += common.HashLength + 3 + len(v.Key) + 8 + len(v.Data)
 	}
 
 	// acls
@@ -92,11 +97,23 @@ func (sd *StreamData) Size() int {
 		}
 
 		if v.Key != nil {
-			size += common.HashLength
+			size += 3 + len(*v.Key)
 		}
 	}
 
 	return size
+}
+
+func (sd *StreamData) encodeSize24(size int) ([]byte, error) {
+	if size == 0 {
+		return nil, errKeyIsEmpty
+	}
+	var buf [4]byte
+	binary.BigEndian.PutUint32(buf[:], uint32(size))
+	if buf[0] != 0 {
+		return nil, errKeyTooLarge
+	}
+	return buf[1:], nil
 }
 
 func (sd *StreamData) encodeSize32(size int) []byte {
@@ -111,7 +128,7 @@ func (sd *StreamData) encodeSize64(size int) []byte {
 	return buf[:]
 }
 
-func (sd *StreamData) Encode() []byte {
+func (sd *StreamData) Encode() ([]byte, error) {
 	// pre-allocate memory and init length for version
 	encoded := make([]byte, 8, sd.Size())
 
@@ -122,14 +139,24 @@ func (sd *StreamData) Encode() []byte {
 	encoded = append(encoded, sd.encodeSize32(len(sd.Reads))...)
 	for _, v := range sd.Reads {
 		encoded = append(encoded, v.StreamId.Bytes()...)
-		encoded = append(encoded, v.Key.Bytes()...)
+		keySize, err := sd.encodeSize24(len(v.Key))
+		if err != nil {
+			return nil, errKeyTooLarge
+		}
+		encoded = append(encoded, keySize...)
+		encoded = append(encoded, v.Key...)
 	}
 
 	// writes
 	encoded = append(encoded, sd.encodeSize32(len(sd.Writes))...)
 	for _, v := range sd.Writes {
 		encoded = append(encoded, v.StreamId.Bytes()...)
-		encoded = append(encoded, v.Key.Bytes()...)
+		keySize, err := sd.encodeSize24(len(v.Key))
+		if err != nil {
+			return nil, errKeyTooLarge
+		}
+		encoded = append(encoded, keySize...)
+		encoded = append(encoded, v.Key...)
 		encoded = append(encoded, sd.encodeSize64(len(v.Data))...)
 	}
 
@@ -144,7 +171,12 @@ func (sd *StreamData) Encode() []byte {
 		encoded = append(encoded, v.StreamId.Bytes()...)
 
 		if v.Key != nil {
-			encoded = append(encoded, v.Key.Bytes()...)
+			keySize, err := sd.encodeSize24(len(*v.Key))
+			if err != nil {
+				return nil, errKeyTooLarge
+			}
+			encoded = append(encoded, keySize...)
+			encoded = append(encoded, *v.Key...)
 		}
 
 		if v.Account != nil {
@@ -152,5 +184,5 @@ func (sd *StreamData) Encode() []byte {
 		}
 	}
 
-	return encoded
+	return encoded, nil
 }

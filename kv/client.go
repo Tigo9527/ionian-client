@@ -29,7 +29,7 @@ func NewClient(node *node.Client, flow *contract.FlowExt) *Client {
 }
 
 // Get returns paginated value for the specified stream key and offset.
-func (c *Client) Get(streamId, key common.Hash, startIndex, length uint64, version ...uint64) (val *node.Value, err error) {
+func (c *Client) Get(streamId common.Hash, key []byte, startIndex, length uint64, version ...uint64) (val *node.Value, err error) {
 	return c.node.KV().GetValue(streamId, key, startIndex, length, version...)
 }
 
@@ -41,7 +41,7 @@ func (c *Client) GetHoldingStreamIds() (streamIds []common.Hash, err error) {
 	return c.node.KV().GetHoldingStreamIds()
 }
 
-func (c *Client) HasWritePermission(account common.Address, streamId, key common.Hash, version ...uint64) (hasPermission bool, err error) {
+func (c *Client) HasWritePermission(account common.Address, streamId common.Hash, key []byte, version ...uint64) (hasPermission bool, err error) {
 	return c.node.KV().HasWritePermission(account, streamId, key, version...)
 }
 
@@ -49,11 +49,11 @@ func (c *Client) IsAdmin(account common.Address, streamId common.Hash, version .
 	return c.node.KV().IsAdmin(account, streamId, version...)
 }
 
-func (c *Client) IsSpecialKey(streamId, key common.Hash, version ...uint64) (isSpecialKey bool, err error) {
+func (c *Client) IsSpecialKey(streamId common.Hash, key []byte, version ...uint64) (isSpecialKey bool, err error) {
 	return c.node.KV().IsSpecialKey(streamId, key, version...)
 }
 
-func (c *Client) IsWriterOfKey(account common.Address, streamId, key common.Hash, version ...uint64) (isWriter bool, err error) {
+func (c *Client) IsWriterOfKey(account common.Address, streamId common.Hash, key []byte, version ...uint64) (isWriter bool, err error) {
 	return c.node.KV().IsWriterOfKey(account, streamId, key, version...)
 }
 
@@ -119,7 +119,12 @@ func (b *Batcher) writeTempFile(data *StreamData) (string, error) {
 	}
 	defer file.Close()
 
-	if _, err = file.Write(data.Encode()); err != nil {
+	encoded, err := data.Encode()
+	if err != nil {
+		return "", errors.WithMessage(err, "Failed to encode data")
+	}
+
+	if _, err = file.Write(encoded); err != nil {
 		return "", errors.WithMessagef(err, "Failed to write data to %v", file.Name())
 	}
 
