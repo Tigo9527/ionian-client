@@ -12,6 +12,8 @@ const maxSetSize = 1 << 16 // 64K
 
 const maxKeySize = 1 << 24 // 16.7M
 
+const maxQuerySize = 1024 * 256
+
 var errSizeTooLarge = errors.New("size too large")
 
 var errKeyTooLarge = errors.New("key too large")

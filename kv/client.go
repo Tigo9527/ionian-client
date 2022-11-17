@@ -28,9 +28,70 @@ func NewClient(node *node.Client, flow *contract.FlowExt) *Client {
 	}
 }
 
+func (c *Client) NewIterator(streamId common.Hash, version ...uint64) *Iterator {
+	var v uint64
+	v = math.MaxUint64
+	if len(version) > 0 {
+		v = version[0]
+	}
+	return &Iterator{
+		client:      c,
+		streamId:    streamId,
+		version:     v,
+		currentPair: nil,
+	}
+}
+
+func (c *Client) GetValue(streamId common.Hash, key []byte, version ...uint64) (val *node.Value, err error) {
+	var v uint64
+	v = math.MaxUint64
+	if len(version) > 0 {
+		v = version[0]
+	}
+	val = &node.Value{
+		Version: v,
+		Data:    make([]byte, 0),
+		Size:    0,
+	}
+	for {
+		var seg *node.Value
+		seg, err = c.node.KV().GetValue(streamId, key, uint64(len(val.Data)), maxQuerySize, val.Version)
+		if err != nil {
+			return
+		}
+		if val.Version == math.MaxUint64 {
+			val.Version = seg.Version
+		} else if val.Version != seg.Version {
+			val.Version = seg.Version
+			val.Data = make([]byte, 0)
+		}
+		val.Size = seg.Size
+		val.Data = append(val.Data, seg.Data...)
+		if uint64(len(val.Data)) == val.Size {
+			return
+		}
+	}
+}
+
 // Get returns paginated value for the specified stream key and offset.
 func (c *Client) Get(streamId common.Hash, key []byte, startIndex, length uint64, version ...uint64) (val *node.Value, err error) {
 	return c.node.KV().GetValue(streamId, key, startIndex, length, version...)
+}
+
+func (c *Client) GetNext(streamId common.Hash, key []byte, startIndex, length uint64, inclusive bool, version ...uint64) (val *node.KeyValue, err error) {
+	return c.node.KV().GetNext(streamId, key, startIndex, length, inclusive, version...)
+}
+
+func (c *Client) GetPrev(streamId common.Hash, key []byte, startIndex, length uint64, inclusive bool, version ...uint64) (val *node.KeyValue, err error) {
+	return c.node.KV().GetPrev(streamId, key, startIndex, length, inclusive, version...)
+}
+
+func (c *Client) GetFirst(streamId common.Hash, startIndex, length uint64, version ...uint64) (val *node.KeyValue, err error) {
+	return c.node.KV().GetFirst(streamId, startIndex, length, version...)
+}
+
+func (c *Client) GetLast(streamId common.Hash, startIndex, length uint64, version ...uint64) (val *node.KeyValue, err error) {
+	return c.node.KV().GetLast(streamId, startIndex, length, version...)
 }
 
 func (c *Client) GetTransactionResult(txSeq uint64) (result string, err error) {

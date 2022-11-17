@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/Ionian-Web3-Storage/ionian-client/kv"
 	"github.com/Ionian-Web3-Storage/ionian-client/node"
 	ethCommon "github.com/ethereum/go-ethereum/common"
 )
@@ -16,11 +17,18 @@ func main() {
 		return
 	}
 	streamId := ethCommon.HexToHash("0x000000000000000000000000000000000000000000000000000000000000f2bd")
-	key := []byte("TESTKEY")
+	key := []byte("TESTKEY0")
+	key1 := []byte("TESTKEY1")
+	key2 := []byte("TESTKEY2")
 	account := ethCommon.HexToAddress("0x578dd2bfc41bb66e9f0ae0802c613996440c9597")
-	kvClient := client.KV()
-	val, _ := kvClient.GetValue(streamId, key, 0, 1000)
+
+	kvClient := kv.NewClient(client, nil)
+	val, _ := kvClient.GetValue(streamId, key)
 	fmt.Println(string(val.Data))
+	val, _ = kvClient.GetValue(streamId, key1)
+	fmt.Println(string(val.Data))
+	val, _ = kvClient.GetValue(streamId, key2)
+	fmt.Println(val)
 	fmt.Println(kvClient.GetTransactionResult(2))
 	fmt.Println(kvClient.GetHoldingStreamIds())
 	fmt.Println(kvClient.HasWritePermission(account, streamId, key))

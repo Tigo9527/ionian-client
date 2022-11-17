@@ -38,3 +38,10 @@ type Value struct {
 	Data    []byte `json:"data"`    // value data
 	Size    uint64 `json:"size"`    // value total size
 }
+
+type KeyValue struct {
+	Version uint64 `json:"version"` // key version
+	Key     []byte `json:"key"`     // value key
+	Data    []byte `json:"data"`    // value data
+	Size    uint64 `json:"size"`    // value total size
+}

@@ -23,6 +23,7 @@ func main() {
 	}
 	blockchainClient := common.MustNewWeb3(BlockchainClientAddr, PrivKey)
 	defer blockchainClient.Close()
+	contract.CustomGasLimit = 1000000
 	ionian, err := contract.NewFlowExt(ethCommon.HexToAddress(FlowContractAddr), blockchainClient)
 	if err != nil {
 		fmt.Println(err)
@@ -31,8 +32,12 @@ func main() {
 	kvClient := kv.NewClient(ionianClient, ionian)
 	batcher := kvClient.Batcher()
 	batcher.Set(ethCommon.HexToHash("0x000000000000000000000000000000000000000000000000000000000000f2bd"),
-		[]byte("TESTKEY"),
+		[]byte("TESTKEY0"),
 		[]byte{69, 70, 71, 72, 73},
+	)
+	batcher.Set(ethCommon.HexToHash("0x000000000000000000000000000000000000000000000000000000000000f2bd"),
+		[]byte("TESTKEY1"),
+		[]byte{74, 75, 76, 77, 78},
 	)
 	err = batcher.Exec()
 	if err != nil {
