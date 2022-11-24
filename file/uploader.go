@@ -12,8 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// maxDataSize is the maximum data size to upload on blockchain directly.
-// const maxDataSize = int64(4 * 1024)
+// smallFileSizeThreshold is the maximum file size to upload without log entry available on storage node.
+const smallFileSizeThreshold = int64(256 * 1024)
 
 type UploadOption struct {
 	Tags  []byte // for kv operations
@@ -72,18 +72,10 @@ func (uploader *Uploader) Upload(filename string, option ...UploadOption) error 
 
 	logrus.WithField("info", info).Debug("Log entry retrieved from storage node")
 
+	// In case that user interact with blockchain via Metamask
 	if uploader.flow == nil && info == nil {
 		return errors.New("log entry not available on storage node")
 	}
-
-	// Upload small data on blockchain directly.
-	// if file.Size() <= maxDataSize {
-	// 	if info != nil {
-	// 		return errors.New("File already exists on Ionian network")
-	// 	}
-
-	// 	return uploader.uploadSmallData(filename)
-	// }
 
 	// already finalized
 	if info != nil && info.Finalized {
@@ -99,15 +91,23 @@ func (uploader *Uploader) Upload(filename string, option ...UploadOption) error 
 		return nil
 	}
 
+	// Log entry unavailable on storage node yet.
 	if info == nil {
 		// Append log on blockchain
 		if _, err = uploader.submitLogEntry(file, opt.Tags); err != nil {
 			return errors.WithMessage(err, "Failed to submit log entry")
 		}
 
-		// Wait for storage node to retrieve log entry from blockchain
-		if err = uploader.waitForLogEntry(tree.Root(), false); err != nil {
-			return errors.WithMessage(err, "Failed to check if log entry available on storage node")
+		// For small file, could upload file to storage node immediately.
+		// Otherwise, need to wait for log entry available on storage node,
+		// which requires transaction confirmed on blockchain.
+		if file.Size() <= smallFileSizeThreshold {
+			logrus.Info("Upload small file immediately")
+		} else {
+			// Wait for storage node to retrieve log entry from blockchain
+			if err = uploader.waitForLogEntry(tree.Root(), false); err != nil {
+				return errors.WithMessage(err, "Failed to check if log entry available on storage node")
+			}
 		}
 	}
 
@@ -123,22 +123,6 @@ func (uploader *Uploader) Upload(filename string, option ...UploadOption) error 
 
 	return nil
 }
-
-// func (uploader *Uploader) uploadSmallData(filename string) error {
-// 	content, err := ioutil.ReadFile(filename)
-// 	if err != nil {
-// 		return errors.WithMessage(err, "Failed to read data from file")
-// 	}
-
-// 	hash, err := uploader.ionian.AppendLogWithData(content)
-// 	if err != nil {
-// 		return errors.WithMessage(err, "Failed to send transaction to append log with data")
-// 	}
-
-// 	logrus.WithField("hash", hash.Hex()).Info("Succeeded to send transaction to append log with data")
-
-// 	return uploader.waitForSuccessfulExecution(hash)
-// }
 
 func (uploader *Uploader) submitLogEntry(file *File, tags []byte) (*types.Receipt, error) {
 	// Construct submission
