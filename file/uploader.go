@@ -112,7 +112,7 @@ func (uploader *Uploader) Upload(filename string, option ...UploadOption) error 
 	}
 
 	// Upload file to storage node
-	if err = uploader.uploadFile(file, tree); err != nil {
+	if err = uploader.uploadFile(file, tree, info.UploadedSegNum); err != nil {
 		return errors.WithMessage(err, "Failed to upload file")
 	}
 
@@ -175,11 +175,10 @@ func (uploader *Uploader) waitForLogEntry(root common.Hash, finalityRequired boo
 }
 
 // TODO error tolerance
-func (uploader *Uploader) uploadFile(file *File, tree *merkle.Tree) error {
-	logrus.Info("Begin to upload file")
+func (uploader *Uploader) uploadFile(file *File, tree *merkle.Tree, segIndex uint64) error {
+	logrus.WithField("segIndex", segIndex).Info("Begin to upload file")
 
-	iter := file.Iterate(true)
-	var segIndex int
+	iter := NewSegmentIterator(file.underlying, file.Size(), int64(segIndex*DefaultSegmentSize), true)
 
 	for {
 		ok, err := iter.Next()
@@ -192,18 +191,18 @@ func (uploader *Uploader) uploadFile(file *File, tree *merkle.Tree) error {
 		}
 
 		segment := iter.Current()
-		proof := tree.ProofAt(segIndex)
+		proof := tree.ProofAt(int(segIndex))
 
 		// Skip upload rear padding data
 		numChunks := file.NumChunks()
 		startIndex := segIndex * DefaultSegmentMaxChunks
 		allDataUploaded := false
-		if startIndex >= int(numChunks) {
+		if startIndex >= numChunks {
 			// file real data already uploaded
 			break
-		} else if startIndex+len(segment)/DefaultChunkSize >= int(numChunks) {
+		} else if startIndex+uint64(len(segment))/DefaultChunkSize >= numChunks {
 			// last segment has real data
-			expectedLen := DefaultChunkSize * (int(numChunks) - startIndex)
+			expectedLen := DefaultChunkSize * int(numChunks-startIndex)
 			segment = segment[:expectedLen]
 			allDataUploaded = true
 		}
@@ -211,7 +210,7 @@ func (uploader *Uploader) uploadFile(file *File, tree *merkle.Tree) error {
 		segWithProof := node.SegmentWithProof{
 			Root:     tree.Root(),
 			Data:     segment,
-			Index:    uint64(segIndex),
+			Index:    segIndex,
 			Proof:    proof,
 			FileSize: uint64(file.Size()),
 		}
@@ -226,7 +225,7 @@ func (uploader *Uploader) uploadFile(file *File, tree *merkle.Tree) error {
 				"total":      file.NumSegments(),
 				"index":      segIndex,
 				"chunkStart": chunkIndex,
-				"chunkEnd":   chunkIndex + len(segment)/DefaultChunkSize,
+				"chunkEnd":   chunkIndex + uint64(len(segment))/DefaultChunkSize,
 				"root":       segmentRoot(segment),
 			}).Debug("Segment uploaded")
 		}
