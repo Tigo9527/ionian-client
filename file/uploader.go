@@ -92,6 +92,7 @@ func (uploader *Uploader) Upload(filename string, option ...UploadOption) error 
 	}
 
 	// Log entry unavailable on storage node yet.
+	segNum := uint64(0)
 	if info == nil {
 		// Append log on blockchain
 		if _, err = uploader.submitLogEntry(file, opt.Tags); err != nil {
@@ -108,11 +109,16 @@ func (uploader *Uploader) Upload(filename string, option ...UploadOption) error 
 			if err = uploader.waitForLogEntry(tree.Root(), false); err != nil {
 				return errors.WithMessage(err, "Failed to check if log entry available on storage node")
 			}
+			info, err = uploader.client.GetFileInfo(tree.Root())
+			if err != nil {
+				return errors.WithMessage(err, "Failed to get file info from storage node after waitForLogEntry.")
+			}
+			segNum = info.UploadedSegNum
 		}
 	}
 
 	// Upload file to storage node
-	if err = uploader.uploadFile(file, tree, info.UploadedSegNum); err != nil {
+	if err = uploader.uploadFile(file, tree, segNum); err != nil {
 		return errors.WithMessage(err, "Failed to upload file")
 	}
 
