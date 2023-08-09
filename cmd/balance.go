@@ -19,7 +19,7 @@ import (
 // balanceCmd represents the balance command
 var balanceCmd = &cobra.Command{
 	Use:   "balance",
-	Short: "Check account balance",
+	Short: "Check account balance, mint and approve.",
 	Long:  `Check balance, native token (GAS) and storage token`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client, contractAddr, flowExt, err := SetupLayer1(uploadArgs.url, uploadArgs.contract, uploadArgs.key)
@@ -66,7 +66,7 @@ func (tokenInfo *TokenBalance) checkAllowance(minBalance *big.Int) error {
 	balance := tokenInfo.balance
 	signer, _ := contract.DefaultSigner(tokenInfo.client)
 
-	logrus.Debug("balance ", fmtBalance.String())
+	logrus.Debug("erc20 token balance ", fmtBalance.String())
 	if balance.Cmp(minBalance) < 0 || balance.Cmp(big.NewInt(0)) == 0 {
 		logrus.WithFields(logrus.Fields{
 			"token": token.Hex(), "balance": balance, "minBalance": minBalance,

@@ -13,7 +13,7 @@ import (
 // mintCmd represents the mint command
 var mintCmd = &cobra.Command{
 	Use:   "mint",
-	Short: "Mint faucet token",
+	Short: "Mint faucet token, check allowance and approve if necessary.",
 	Long:  `Call mint(address, amount) on the token contract used by ionian.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client, contractAddr, flowExt, err := SetupLayer1(uploadArgs.url, uploadArgs.contract, uploadArgs.key)

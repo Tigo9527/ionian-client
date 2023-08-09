@@ -64,7 +64,7 @@ func checkToken(flowCaller *contract.FlowCaller, flowAddr *ethCommon.Address, cl
 		return err
 	}
 	tokenInfo.logTokenInfo()
-	return tokenInfo.checkAllowance(tokenInfo.balance)
+	return nil
 }
 
 func SetupLayer1(url string, contractStr string, key string) (*web3go.Client, *ethCommon.Address, *contract.FlowExt, error) {
