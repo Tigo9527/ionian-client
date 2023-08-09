@@ -52,6 +52,11 @@ func initLog() {
 
 // Execute is the command line entrypoint.
 func Execute() {
+	customFormatter := new(logrus.TextFormatter)
+	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	logrus.SetFormatter(customFormatter)
+	customFormatter.FullTimestamp = true
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

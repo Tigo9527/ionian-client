@@ -68,7 +68,10 @@ func (downloader *Downloader) queryFile(root common.Hash) (info *node.FileInfo, 
 		}
 	}
 
-	logrus.WithField("file", info).Debug("File found by root hash")
+	logrus.WithFields(logrus.Fields{
+		"root": info.Tx.DataMerkleRoot.Hex(),
+		"size": info.Tx.Size,
+	}).Debug("File found by root hash")
 
 	return
 }

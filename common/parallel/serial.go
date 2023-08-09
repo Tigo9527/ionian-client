@@ -2,6 +2,7 @@ package parallel
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -58,6 +59,7 @@ func work(ctx context.Context, routine int, parallelizable Interface, taskCh <-c
 			val, err := parallelizable.ParallelDo(routine, task)
 			resultCh <- &Result{routine, task, val, err}
 			if err != nil {
+				logrus.WithError(err).Error("task failed")
 				return
 			}
 		}

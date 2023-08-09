@@ -71,12 +71,17 @@ func (downloader *SegmentDownloader) ParallelDo(routine, task int) (interface{},
 		segment []byte
 		err     error
 	)
-
+	logrus.WithFields(logrus.Fields{
+		"index": startIndex,
+	}).Debug("download start")
 	if downloader.withProof {
 		segment, err = downloader.downloadWithProof(downloader.clients[routine], root, startIndex, endIndex)
 	} else {
 		segment, err = downloader.clients[routine].Ionian().DownloadSegment(root, startIndex, endIndex)
 	}
+	logrus.WithFields(logrus.Fields{
+		"index": startIndex,
+	}).Debug("downloaded")
 
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{

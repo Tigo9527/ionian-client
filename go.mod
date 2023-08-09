@@ -10,6 +10,7 @@ require (
 	github.com/openweb3/go-rpc-provider v0.2.7
 	github.com/openweb3/web3go v0.2.1-0.20221026093812-d63d83edcfec
 	github.com/pkg/errors v0.9.1
+	github.com/shopspring/decimal v1.3.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.5

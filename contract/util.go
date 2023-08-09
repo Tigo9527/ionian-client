@@ -14,6 +14,7 @@ import (
 	"github.com/openweb3/web3go/interfaces"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,7 +54,15 @@ func WaitForReceipt(client *web3go.Client, txHash common.Hash, successRequired b
 	}
 }
 
-func defaultSigner(clientWithSigner *web3go.Client) (interfaces.Signer, error) {
+func ToDecimal(value *big.Int, decimals int) decimal.Decimal {
+	mul := decimal.NewFromFloat(float64(10)).Pow(decimal.NewFromFloat(float64(decimals)))
+	num, _ := decimal.NewFromString(value.String())
+	result := num.Div(mul)
+
+	return result
+}
+
+func DefaultSigner(clientWithSigner *web3go.Client) (interfaces.Signer, error) {
 	sm, err := clientWithSigner.GetSignerManager()
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to get signer manager from client")
@@ -72,7 +81,7 @@ func defaultSigner(clientWithSigner *web3go.Client) (interfaces.Signer, error) {
 }
 
 func Deploy(clientWithSigner *web3go.Client, dataOrFile string) (common.Address, error) {
-	signer, err := defaultSigner(clientWithSigner)
+	signer, err := DefaultSigner(clientWithSigner)
 	if err != nil {
 		return common.Address{}, errors.WithMessage(err, "Failed to detect account")
 	}

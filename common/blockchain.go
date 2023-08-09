@@ -22,7 +22,8 @@ func MustNewWeb3(url, key string) *web3go.Client {
 
 func NewWeb3(url, key string) (*web3go.Client, error) {
 	sm := signers.MustNewSignerManagerByPrivateKeyStrings([]string{key})
-
+	list := sm.List()
+	logrus.Debug("signer address ", list[0].Address())
 	option := new(web3go.ClientOption).
 		WithRetry(3, time.Second).
 		WithTimout(5 * time.Second).

@@ -1,14 +1,14 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/Ionian-Web3-Storage/ionian-client/file"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"time"
-
-	"github.com/Ionian-Web3-Storage/ionian-client/file"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -27,7 +27,7 @@ var (
 
 func init() {
 	genFileCmd.Flags().Uint64Var(&genFileArgs.size, "size", 0, "File size in bytes")
-	genFileCmd.Flags().StringVar(&genFileArgs.file, "file", "tmp123456", "File name to generate")
+	genFileCmd.Flags().StringVar(&genFileArgs.file, "file", "", "File name to generate")
 	genFileCmd.Flags().BoolVar(&genFileArgs.overwrite, "overwrite", true, "Whether to overwrite existing file")
 
 	rootCmd.AddCommand(genFileCmd)
@@ -45,14 +45,23 @@ func generateTempFile(*cobra.Command, []string) {
 			return
 		}
 
-		logrus.Info("Overrite file")
+		logrus.Info("Overwrite file")
 	}
-
-	rand.Seed(time.Now().UnixNano())
-
 	if genFileArgs.size == 0 {
+		rand.Seed(time.Now().UnixNano())
 		// [1M, 10M)
 		genFileArgs.size = 1024*1024 + uint64(9.0*1024*1024*rand.Float64())
+	}
+	if genFileArgs.file == "" {
+		fileNameBySize := ""
+		if genFileArgs.size < 1024 {
+			fileNameBySize = fmt.Sprintf("file%dByte.bin", genFileArgs.size)
+		} else if genFileArgs.size < 1024*1024 {
+			fileNameBySize = fmt.Sprintf("file%dKB.bin", genFileArgs.size/1024)
+		} else {
+			fileNameBySize = fmt.Sprintf("file%dMB.bin", genFileArgs.size/1024/1024)
+		}
+		genFileArgs.file = fileNameBySize
 	}
 
 	data := make([]byte, genFileArgs.size)
@@ -75,6 +84,6 @@ func generateTempFile(*cobra.Command, []string) {
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to generate merkle tree")
 	}
-
+	logrus.WithField("file", genFileArgs.file).Info("Write to file")
 	logrus.WithField("root", tree.Root()).Info("Succeeded to write file")
 }

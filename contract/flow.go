@@ -2,6 +2,7 @@ package contract
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
@@ -14,7 +15,7 @@ type FlowExt struct {
 
 func NewFlowExt(flowAddress common.Address, clientWithSigner *web3go.Client) (*FlowExt, error) {
 	backend, signer := clientWithSigner.ToClientForContract()
-
+	logrus.Debug("flow contract ", flowAddress.Hex())
 	contract, err := newContract(clientWithSigner, signer)
 	if err != nil {
 		return nil, err
@@ -34,6 +35,7 @@ func (flow *FlowExt) SubmitExt(submission IonianSubmission) (common.Hash, error)
 		return common.Hash{}, err
 	}
 
+	logrus.Debug("call flow.Submit...")
 	tx, err := flow.Submit(opts, submission)
 	if err != nil {
 		return common.Hash{}, err

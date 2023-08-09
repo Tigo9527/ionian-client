@@ -371,14 +371,8 @@ github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFSt
 github.com/openweb3/go-rpc-provider v0.2.2/go.mod h1:DYz40TbzhzyTA06UFqGIKSXp0uFot6ZKh4QarD//eZ0=
 github.com/openweb3/go-rpc-provider v0.2.7 h1:GZeUU7HUdxknv4mz5Z5LfJJk9bb+FKEgzfs/nfnrBLA=
 github.com/openweb3/go-rpc-provider v0.2.7/go.mod h1:DYz40TbzhzyTA06UFqGIKSXp0uFot6ZKh4QarD//eZ0=
-github.com/openweb3/go-sdk-common v0.0.0-20220524083215-d22d44765e44 h1:OmFM0oP0gg43Dus81HaRcGJAuKtGBpeek98+pFH1y0U=
-github.com/openweb3/go-sdk-common v0.0.0-20220524083215-d22d44765e44/go.mod h1:/M7gnCteccqnoBJMBmwTXkj7akVzQIMcD8y6DFX5GmE=
 github.com/openweb3/go-sdk-common v0.0.0-20220720074746-a7134e1d372c h1:BrPXZpkTdmZe5bNjSSnxWqL44X9FcZ3xftLcYNkIJ68=
 github.com/openweb3/go-sdk-common v0.0.0-20220720074746-a7134e1d372c/go.mod h1:0WCVKMiLiYEaHhpQWQ3rgLti/Fv/+JPRiB0sEoovwk8=
-github.com/openweb3/web3go v0.1.2-0.20220627062242-ecc1ba876617 h1:B3Dadwv1b2pe7/AHPoiQj864Egz0HepMtictvrPyoEo=
-github.com/openweb3/web3go v0.1.2-0.20220627062242-ecc1ba876617/go.mod h1:G/vX7crNV+QGZj4s11cM560WB6j4UjCU1z5nuE/mV5U=
-github.com/openweb3/web3go v0.2.1-0.20221026092347-24b4120ddf7c h1:fnM9S81wPo6NrpUi/LFvNW65gRWx0rOT63G09wYh//E=
-github.com/openweb3/web3go v0.2.1-0.20221026092347-24b4120ddf7c/go.mod h1:nzov9bieJKvQFqJ1gIfvNn3LFO63pdp1C8dP4qv0TmA=
 github.com/openweb3/web3go v0.2.1-0.20221026093812-d63d83edcfec h1:iGV6qHw8Bt6WIujflC4ma2ppbB2Rmqzk1vb13iOibtU=
 github.com/openweb3/web3go v0.2.1-0.20221026093812-d63d83edcfec/go.mod h1:nzov9bieJKvQFqJ1gIfvNn3LFO63pdp1C8dP4qv0TmA=
 github.com/paulbellamy/ratecounter v0.2.0/go.mod h1:Hfx1hDpSGoqxkVVpBi/IlYD7kChlfo5C6hzIHwPqfFE=
@@ -418,6 +412,8 @@ github.com/segmentio/kafka-go v0.2.0/go.mod h1:X6itGqS9L4jDletMsxZ7Dz+JFWxM6JHfP
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
 github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible h1:Bn1aCHHRnjv4Bl16T8rcaFjYSrGrIZvpiGO6P3Q4GpU=
 github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
+github.com/shopspring/decimal v1.3.1 h1:2Usl1nmF/WZucqkFZhnfFYxxxu8LG21F6nPQBE5gKV8=
+github.com/shopspring/decimal v1.3.1/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE=

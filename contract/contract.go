@@ -20,7 +20,7 @@ type contract struct {
 }
 
 func newContract(clientWithSigner *web3go.Client, signerFn bind.SignerFn) (*contract, error) {
-	signer, err := defaultSigner(clientWithSigner)
+	signer, err := DefaultSigner(clientWithSigner)
 	if err != nil {
 		return nil, err
 	}
